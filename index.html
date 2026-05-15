@@ -5,29 +5,48 @@
 </head>
 <body>
 
-<h2>Google Login + Save Data</h2>
+<h2>Full App</h2>
 
 <button onclick="googleLogin()">Login with Google</button>
+<button onclick="logout()">Logout</button>
+
+<br><br>
+
+<input type="file" id="fileInput">
+<button onclick="uploadImage()">Upload Profile Picture</button>
+
+<br><br>
+
+<div id="profile"></div>
 
 <p id="status"></p>
 
 <script type="module">
 
-// Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import { 
   getFirestore, 
   doc, 
-  setDoc 
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Config
+import { 
+  getStorage, 
+  ref, 
+  uploadBytes, 
+  getDownloadURL 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+// CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyDrRL7BkyejSooFNx0pD5hBSMsgkfM8MpM",
   authDomain: "database-f0aee.firebaseapp.com",
@@ -37,32 +56,75 @@ const firebaseConfig = {
   appId: "1:1025759093694:web:debbf45afc5f0241e88fef"
 };
 
-// Init
+// INIT
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const provider = new GoogleAuthProvider();
 
-// Login + Save Data
+// LOGIN
 window.googleLogin = async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+  const result = await signInWithPopup(auth, provider);
+  const user = result.user;
 
-    // Save user data in Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      name: user.displayName,
-      email: user.email,
-      photo: user.photoURL
-    });
+  await setDoc(doc(db, "users", user.uid), {
+    name: user.displayName,
+    email: user.email,
+    photo: user.photoURL
+  });
 
-    document.getElementById("status").innerText =
-      "Saved: " + user.email;
+  document.getElementById("status").innerText = "Logged in ✅";
+};
 
-  } catch (error) {
-    document.getElementById("status").innerText = error.message;
+// LOGOUT
+window.logout = () => {
+  signOut(auth);
+  document.getElementById("profile").innerHTML = "";
+  document.getElementById("status").innerText = "Logged out ❌";
+};
+
+// SHOW USER PROFILE
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+
+      document.getElementById("profile").innerHTML = `
+        <h3>${data.name}</h3>
+        <p>${data.email}</p>
+        <img src="${data.photo}" width="100">
+      `;
+    }
   }
+});
+
+// UPLOAD PROFILE IMAGE
+window.uploadImage = async () => {
+  const file = document.getElementById("fileInput").files[0];
+  const user = auth.currentUser;
+
+  if (!file || !user) {
+    alert("Login and select file");
+    return;
+  }
+
+  const storageRef = ref(storage, "profiles/" + user.uid);
+
+  await uploadBytes(storageRef, file);
+
+  const url = await getDownloadURL(storageRef);
+
+  // update DB
+  await setDoc(doc(db, "users", user.uid), {
+    photo: url
+  }, { merge: true });
+
+  document.getElementById("status").innerText = "Image uploaded ✅";
 };
 
 </script>
