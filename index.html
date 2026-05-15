@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Auth System</title>
+</head>
+<body>
+
+<h2>Login</h2>
+
+<button onclick="googleLogin()">Login with Google</button>
+
+<br><br>
+
+<input id="phone" placeholder="+91XXXXXXXXXX">
+<div id="recaptcha-container"></div>
+<button onclick="sendOTP()">Send OTP</button>
+
+<br><br>
+
+<input id="otp" placeholder="Enter OTP">
+<button onclick="verifyOTP()">Verify OTP</button>
+
+<p id="status"></p>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDrRL7BkyejSooFNx0pD5hBSMsgkfM8MpM",
+  authDomain: "database-f0aee.firebaseapp.com",
+  projectId: "database-f0aee",
+  storageBucket: "database-f0aee.firebasestorage.app",
+  messagingSenderId: "1025759093694",
+  appId: "1:1025759093694:web:debbf45afc5f0241e88fef"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// 🔵 Google Login
+const provider = new GoogleAuthProvider();
+
+window.googleLogin = () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      const user = result.user;
+      document.getElementById("status").innerText =
+        "Google: " + user.email;
+    })
+    .catch((error) => {
+      document.getElementById("status").innerText = error.message;
+    });
+};
+
+// 📱 Phone Login (OTP)
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  size: 'normal'
+});
+
+window.sendOTP = () => {
+  const phoneNumber = document.getElementById("phone").value;
+
+  signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
+    .then((confirmationResult) => {
+      window.confirmationResult = confirmationResult;
+      document.getElementById("status").innerText = "OTP sent ✅";
+    })
+    .catch((error) => {
+      document.getElementById("status").innerText = error.message;
+    });
+};
+
+window.verifyOTP = () => {
+  const code = document.getElementById("otp").value;
+
+  window.confirmationResult.confirm(code)
+    .then((result) => {
+      const user = result.user;
+      document.getElementById("status").innerText =
+        "Phone: " + user.phoneNumber;
+    })
+    .catch((error) => {
+      document.getElementById("status").innerText = error.message;
+    });
+};
+
+</script>
+
+</body>
+</html>
