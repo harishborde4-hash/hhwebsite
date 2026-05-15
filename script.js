@@ -45,11 +45,13 @@ let products = [
 let cart = [];
 let favorites = [];
 let currentFilter = "all";
+let orders = [];
+let discountAmount = 0;
+let currentUser = null;
 
 /* ================= RENDER PRODUCTS ================= */
 function renderProducts(list = products) {
   const container = document.getElementById("food-list");
-
   container.innerHTML = "";
 
   list.forEach(product => {
@@ -57,7 +59,7 @@ function renderProducts(list = products) {
     div.classList.add("card");
 
     div.innerHTML = `
-      <img src="${product.img}" onclick="openQuickView(${product.id})">
+      <img src="${product.img}" onclick="openQuickView(${product.id})" style="cursor: zoom-in;">
       <h3>${product.name}</h3>
       <p>₹${product.price}</p>
       <p>⭐ ${product.rating}</p>
@@ -103,6 +105,9 @@ function sortProducts(type) {
     sorted.sort((a, b) => b.price - a.price);
   } else if (type === "rating") {
     sorted.sort((a, b) => b.rating - a.rating);
+  } else {
+    renderProducts();
+    return;
   }
 
   renderProducts(sorted);
@@ -121,11 +126,14 @@ let currentQuickProduct = null;
 
 function openQuickView(id) {
   const product = products.find(p => p.id === id);
+  if (!product) return;
+
   currentQuickProduct = product;
 
   document.getElementById("quick-name").innerText = product.name;
   document.getElementById("quick-price").innerText = product.price;
   document.getElementById("quick-img").src = product.img;
+  document.getElementById("quick-desc").innerText = `Delicious ${product.name.toLowerCase()} just for you!`;
 
   document.getElementById("quick-view-modal").style.display = "flex";
 }
@@ -134,13 +142,28 @@ function closeQuickView() {
   document.getElementById("quick-view-modal").style.display = "none";
 }
 
+function addQuickToCart() {
+  if (!currentQuickProduct) return;
+
+  addToCart(currentQuickProduct.id);
+  closeQuickView();
+}
+
 /* ================= INITIAL LOAD ================= */
-window.onload = () => {
+window.addEventListener("load", () => {
   renderProducts();
-};
+  updateCartUI();
+  updateFavoritesUI();
+  updateCheckoutUI();
+  updateOrdersUI();
+  updateUserUI();
+});
+
 /* ================= ADD TO CART ================= */
 function addToCart(id) {
   const product = products.find(p => p.id === id);
+
+  if (!product) return;
 
   const existing = cart.find(item => item.id === id);
 
@@ -211,6 +234,7 @@ function updateCartUI() {
   });
 
   document.getElementById("subtotal").innerText = total;
+  document.getElementById("delivery").innerText = "40";
   document.getElementById("total").innerText = total + 40;
 
   count.innerText = itemCount;
@@ -235,12 +259,12 @@ function closeCart() {
 function goToCheckout() {
   document.getElementById("checkout-section").scrollIntoView();
   closeCart();
+  updateCheckoutUI();
 }
 
 /* ================= TOAST ================= */
 function showToast(msg) {
   const toast = document.getElementById("toast");
-
   toast.innerText = msg;
   toast.style.display = "block";
 
@@ -248,9 +272,12 @@ function showToast(msg) {
     toast.style.display = "none";
   }, 2000);
 }
+
 /* ================= ADD TO FAVORITES ================= */
 function addToFavorites(id) {
   const product = products.find(p => p.id === id);
+
+  if (!product) return;
 
   const exists = favorites.find(item => item.id === id);
 
@@ -274,6 +301,7 @@ function removeFromFavorites(id) {
 /* ================= UPDATE FAVORITES UI ================= */
 function updateFavoritesUI() {
   const container = document.getElementById("favorites-list");
+  const emptyFav = document.getElementById("empty-favorites");
   const count = document.getElementById("fav-count");
 
   container.innerHTML = "";
@@ -293,9 +321,9 @@ function updateFavoritesUI() {
   count.innerText = favorites.length;
 
   if (favorites.length === 0) {
-    document.getElementById("empty-favorites").style.display = "block";
+    emptyFav.style.display = "block";
   } else {
-    document.getElementById("empty-favorites").style.display = "none";
+    emptyFav.style.display = "none";
   }
 
   updateWishlistUI();
@@ -323,7 +351,6 @@ function updateWishlistUI() {
       <img src="${item.img}" width="100%">
       <h4>${item.name}</h4>
       <p>₹${item.price}</p>
-
       <button onclick="addToCart(${item.id})">Add to Cart</button>
     `;
 
@@ -331,39 +358,32 @@ function updateWishlistUI() {
   });
 }
 
-/* ================= QUICK VIEW FAVORITE ================= */
+/* ================= ADD QUICK VIEW TO FAVORITES ================= */
 function addQuickToFavorites() {
   if (!currentQuickProduct) return;
-
   addToFavorites(currentQuickProduct.id);
 }
 
-/* ================= SAVE TO LOCAL STORAGE ================= */
+/* ================= SAVE / LOAD FAVORITES ================= */
 function saveFavorites() {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
 function loadFavorites() {
   const data = localStorage.getItem("favorites");
-
   if (data) {
     favorites = JSON.parse(data);
     updateFavoritesUI();
   }
 }
 
-/* ================= INIT FAVORITES ================= */
 window.addEventListener("load", () => {
   loadFavorites();
 });
 
-/* ================= AUTO SAVE ================= */
 setInterval(() => {
   saveFavorites();
 }, 2000);
-/* ================= GLOBAL ORDER STATE ================= */
-let orders = [];
-let discountAmount = 0;
 
 /* ================= APPLY COUPON ================= */
 function applyCoupon() {
@@ -456,7 +476,6 @@ function updateOrdersUI() {
       <h4>Order #${order.id}</h4>
       <p>Status: ${order.status}</p>
       <p>Total: ₹${order.total}</p>
-
       <button onclick="trackOrder(${order.id})">Track</button>
       <button onclick="viewInvoice(${order.id})">Invoice</button>
     `;
@@ -470,6 +489,9 @@ function trackOrder(id) {
   document.getElementById("tracking-section").scrollIntoView();
 
   const steps = document.querySelectorAll(".step");
+  steps.forEach((step, index) => {
+    step.classList.remove("active");
+  });
 
   steps.forEach((step, index) => {
     setTimeout(() => {
@@ -481,7 +503,6 @@ function trackOrder(id) {
 /* ================= INVOICE ================= */
 function viewInvoice(id) {
   const order = orders.find(o => o.id === id);
-
   if (!order) return;
 
   document.getElementById("invoice-id").innerText = order.id;
@@ -493,12 +514,10 @@ function viewInvoice(id) {
 
   order.items.forEach(item => {
     const div = document.createElement("div");
-
     div.innerHTML = `
       <span>${item.name} x ${item.qty}</span>
       <span>₹${item.price * item.qty}</span>
     `;
-
     container.appendChild(div);
   });
 
@@ -509,24 +528,15 @@ function closeInvoice() {
   document.getElementById("invoice-modal").style.display = "none";
 }
 
-/* ================= DOWNLOAD INVOICE ================= */
 function downloadInvoice() {
-  alert("Invoice download simulated 📄");
+  showToast("Invoice download simulated 📄");
 }
 
-/* ================= CLOSE SUCCESS ================= */
 function closeSuccess() {
   document.getElementById("success-modal").style.display = "none";
 }
 
-/* ================= INIT CHECKOUT ================= */
-window.addEventListener("load", () => {
-  updateCheckoutUI();
-});
 /* ================= USER STATE ================= */
-let currentUser = null;
-
-/* ================= LOGIN (EMAIL) ================= */
 function loginUser() {
   const email = document.getElementById("auth-email").value;
   const password = document.getElementById("auth-password").value;
@@ -549,13 +559,11 @@ function loginUser() {
   closeAuth();
 }
 
-/* ================= SIGNUP ================= */
 function signupUser() {
   showToast("Signup successful 🎉");
   loginUser();
 }
 
-/* ================= GOOGLE LOGIN (MOCK) ================= */
 function googleLogin() {
   currentUser = {
     name: "Google User",
@@ -570,12 +578,17 @@ function googleLogin() {
   closeAuth();
 }
 
-/* ================= PHONE LOGIN (MOCK) ================= */
 function phoneLogin() {
   document.getElementById("otp-modal").style.display = "flex";
 }
 
 function verifyOTP() {
+  const otp = document.getElementById("otp-input").value.trim();
+  if (!otp) {
+    showToast("Enter OTP ❌");
+    return;
+  }
+
   currentUser = {
     name: "Phone User",
     email: "phone@user.com",
@@ -586,12 +599,10 @@ function verifyOTP() {
   updateUserUI();
 
   showToast("Phone login success 📱");
-
   document.getElementById("otp-modal").style.display = "none";
   closeAuth();
 }
 
-/* ================= LOGOUT ================= */
 function logout() {
   currentUser = null;
   localStorage.removeItem("user");
@@ -600,22 +611,20 @@ function logout() {
   showToast("Logged out 🚪");
 }
 
-/* ================= SAVE USER ================= */
 function saveUser() {
-  localStorage.setItem("user", JSON.stringify(currentUser));
+  if (currentUser) {
+    localStorage.setItem("user", JSON.stringify(currentUser));
+  }
 }
 
-/* ================= LOAD USER ================= */
 function loadUser() {
   const data = localStorage.getItem("user");
-
   if (data) {
     currentUser = JSON.parse(data);
     updateUserUI();
   }
 }
 
-/* ================= UPDATE PROFILE UI ================= */
 function updateUserUI() {
   const name = document.getElementById("user-name");
   const email = document.getElementById("user-email");
@@ -632,7 +641,6 @@ function updateUserUI() {
   }
 }
 
-/* ================= OPEN / CLOSE PROFILE ================= */
 function openProfile() {
   document.getElementById("profile-modal").style.display = "flex";
 }
@@ -641,7 +649,6 @@ function closeProfile() {
   document.getElementById("profile-modal").style.display = "none";
 }
 
-/* ================= AUTH MODAL ================= */
 function openAuth() {
   document.getElementById("auth-modal").style.display = "flex";
 }
@@ -654,14 +661,20 @@ function closeAuth() {
 window.addEventListener("load", () => {
   loadUser();
 });
+
 /* ================= CHAT SYSTEM ================= */
 function toggleChat() {
   const chat = document.getElementById("chat-box");
-
-  chat.style.display = chat.style.display === "flex" ? "none" : "flex";
+  const btn = document.getElementById("chat-toggle-btn");
+  if (chat.style.display === "flex") {
+    chat.style.display = "none";
+    btn.style.animation = "bounce 2s infinite";
+  } else {
+    chat.style.display = "flex";
+    btn.style.animation = "none";
+  }
 }
 
-/* ================= SEND MESSAGE ================= */
 function sendMessage() {
   const input = document.getElementById("chat-input");
   const msg = input.value.trim();
@@ -678,64 +691,59 @@ function sendMessage() {
 
   input.value = "";
 
-  // Bot reply (simple AI)
+  // Bot reply
   setTimeout(() => {
     const botDiv = document.createElement("div");
     botDiv.classList.add("message", "bot");
-
     botDiv.innerHTML = `<p>${getBotReply(msg)}</p>`;
     chatBox.appendChild(botDiv);
-
     chatBox.scrollTop = chatBox.scrollHeight;
   }, 800);
 }
 
-/* ================= BOT REPLY ================= */
 function getBotReply(msg) {
   msg = msg.toLowerCase();
 
   if (msg.includes("hello")) return "Hi! 👋 How can I help you?";
-  if (msg.includes("order")) return "You can track your order in Orders 📦";
+  if (msg.includes("order") || msg.includes("track")) return "You can track your order in Orders 📦";
   if (msg.includes("payment")) return "We support UPI, Cards & COD 💳";
-  if (msg.includes("refund")) return "Refund will be processed in 3-5 days 💸";
+  if (msg.includes("refund") || msg.includes("return")) return "Refund will be processed in 3–5 days 💸";
+  if (msg.includes("help")) return "I'm here to help! 😊";
 
   return "I'm here to help! 😊";
 }
 
 /* ================= NOTIFICATIONS ================= */
 function openNotifications() {
-  document.getElementById("notification-panel").classList.add("active");
+  const panel = document.getElementById("notification-panel");
+  panel.classList.add("active");
 }
 
 function closeNotifications() {
-  document.getElementById("notification-panel").classList.remove("active");
+  const panel = document.getElementById("notification-panel");
+  panel.classList.remove("active");
 }
 
-/* ================= PUSH NOTIFICATION ================= */
 function pushNotification(text) {
   const list = document.getElementById("notifications-list");
 
   const div = document.createElement("div");
   div.classList.add("notification-item");
-
   div.innerHTML = `<p>${text}</p>`;
-
   list.prepend(div);
 
   showToast("New notification 🔔");
 }
 
-/* ================= AUTO NOTIFICATIONS ================= */
+// Auto notifications every 15 seconds
 setInterval(() => {
   const msgs = [
     "🔥 New offer available!",
     "🚚 Your order is on the way!",
     "🎉 20% discount unlocked!"
   ];
-
   const random = msgs[Math.floor(Math.random() * msgs.length)];
   pushNotification(random);
-
 }, 15000);
 
 /* ================= SIDEBAR ================= */
@@ -760,27 +768,8 @@ function scrollToProducts() {
   });
 }
 
-/* ================= NAVIGATION ================= */
 function goHome() {
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-/* ================= FILTER DRAWER ================= */
-function closeFilter() {
-  document.getElementById("filter-drawer").style.display = "none";
-}
-
-function filterByRating(rating) {
-  if (rating === "all") {
-    renderProducts(products);
-  } else {
-    const filtered = products.filter(p => p.rating >= rating);
-    renderProducts(filtered);
-  }
-}
-
-function filterByTime(time) {
-  showToast("Filter applied ⏱ (demo)");
 }
 
 /* ================= IMAGE ZOOM ================= */
@@ -792,7 +781,18 @@ function openZoom(img) {
 function closeZoom() {
   document.getElementById("zoom-modal").style.display = "none";
 }
-/* ================= FINAL APP INIT ================= */
+
+/* ================= NAVIGATION TO ORDERS (stub) ================= */
+function openOrders() {
+  document.getElementById("orders-section").scrollIntoView();
+}
+
+/* ================= CLOSE ERROR modal ================= */
+function closeError() {
+  document.getElementById("error-modal").style.display = "none";
+}
+
+/* ================= FINAL INIT (optional) ================= */
 function initApp() {
   renderProducts();
   updateCartUI();
@@ -802,12 +802,9 @@ function initApp() {
   updateUserUI();
 }
 
-/* Run everything safely on load */
-window.addEventListener("load", () => {
-  initApp();
-});
+initApp();
 
-/* Optional: expose functions globally (IMPORTANT for onclick buttons) */
+/* ========== EXPOSE FOR onclick ATTRIBUTES ========== */
 window.addToCart = addToCart;
 window.addToFavorites = addToFavorites;
 window.removeFromCart = removeFromCart;
@@ -821,7 +818,7 @@ window.closeFavorites = closeFavorites;
 
 window.openQuickView = openQuickView;
 window.closeQuickView = closeQuickView;
-
+window.addQuickToCart = addQuickToCart;
 window.addQuickToFavorites = addQuickToFavorites;
 
 window.applyCoupon = applyCoupon;
@@ -859,8 +856,7 @@ window.goHome = goHome;
 
 window.openZoom = openZoom;
 window.closeZoom = closeZoom;
+
 window.filterCategory = filterCategory;
 window.sortProducts = sortProducts;
 window.updatePrice = updatePrice;
-window.filterByRating = filterByRating;
-window.filterByTime = filterByTime;
