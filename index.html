@@ -1,19 +1,1032 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Ecommerce</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodExpress Pro</title>
+
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<h1>My Store</h1>
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
 
-<div id="products" class="grid"></div>
+  <div class="nav-left">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <h1 class="logo">🍔 FoodExpress</h1>
+  </div>
 
-<h2>Cart</h2>
-<div id="cart"></div>
+  <div class="nav-center">
+    <input 
+      type="text" 
+      id="search" 
+      placeholder="Search for food, restaurants..." 
+      oninput="searchFood()"
+    >
+  </div>
 
-<script type="module" src="script.js"></script>
+  <div class="nav-right">
+
+    <button onclick="toggleDarkMode()">🌙</button>
+
+    <button onclick="openFavorites()">
+      ❤️ <span id="fav-count">0</span>
+    </button>
+
+    <button onclick="openCart()">
+      🛒 <span id="cart-count">0</span>
+    </button>
+
+    <button onclick="openProfile()">👤</button>
+
+  </div>
+
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+
+  <div class="hero-content">
+
+    <h1>Order Food Instantly 🚀</h1>
+
+    <p>
+      Fast delivery from your favorite restaurants.
+      Fresh, hot, and delivered to your doorstep.
+    </p>
+
+    <button class="hero-btn" onclick="scrollToProducts()">
+      Explore Menu
+    </button>
+
+  </div>
+
+</section>
+
+<!-- ================= CATEGORY BAR ================= -->
+<section class="category-bar">
+
+  <button onclick="filterCategory('all')">All</button>
+  <button onclick="filterCategory('pizza')">Pizza</button>
+  <button onclick="filterCategory('burger')">Burger</button>
+  <button onclick="filterCategory('drinks')">Drinks</button>
+  <button onclick="filterCategory('dessert')">Dessert</button>
+  <button onclick="filterCategory('indian')">Indian</button>
+  <button onclick="filterCategory('chinese')">Chinese</button>
+
+</section>
+
+<!-- ================= SORT + FILTER ================= -->
+<section class="filter-section">
+
+  <div class="sort-box">
+    <label>Sort:</label>
+    <select onchange="sortProducts(this.value)">
+      <option value="default">Default</option>
+      <option value="low">Price Low</option>
+      <option value="high">Price High</option>
+      <option value="rating">Top Rated</option>
+    </select>
+  </div>
+
+  <div class="price-filter">
+    <label>Max Price: ₹<span id="priceValue">1000</span></label>
+    <input 
+      type="range" 
+      min="0" 
+      max="2000" 
+      value="1000"
+      oninput="updatePrice(this.value)"
+    >
+  </div>
+
+</section>
+
+<!-- ================= MAIN PRODUCT GRID ================= -->
+<main id="products-section">
+
+  <div id="food-list" class="grid">
+
+    <!-- Products will be injected by JS -->
+
+  </div>
+
+</main>
+
+<!-- ================= LOADER ================= -->
+<div id="loader" class="loader">
+  Loading...
+</div>
+
+<!-- ================= TOAST ================= -->
+<div id="toast"></div>
+<!-- ================= SIDEBAR ================= -->
+<aside id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <h2>Menu</h2>
+    <button onclick="toggleSidebar()">❌</button>
+  </div>
+
+  <ul class="sidebar-menu">
+    <li onclick="goHome()">🏠 Home</li>
+    <li onclick="openCart()">🛒 Cart</li>
+    <li onclick="openFavorites()">❤️ Favorites</li>
+    <li onclick="openOrders()">📦 Orders</li>
+    <li onclick="openProfile()">👤 Profile</li>
+    <li onclick="toggleDarkMode()">🌙 Dark Mode</li>
+  </ul>
+
+</aside>
+
+<!-- ================= CART MODAL ================= -->
+<div id="cart-modal" class="modal">
+
+  <div class="modal-content cart-modal">
+
+    <div class="modal-header">
+      <h2>🛒 Your Cart</h2>
+      <button onclick="closeCart()">❌</button>
+    </div>
+
+    <div id="cart-items" class="cart-items">
+      <!-- Items will come from JS -->
+    </div>
+
+    <div class="cart-summary">
+
+      <p>Subtotal: ₹<span id="subtotal">0</span></p>
+      <p>Delivery: ₹<span id="delivery">40</span></p>
+      <h3>Total: ₹<span id="total">0</span></h3>
+
+      <button onclick="goToCheckout()" class="checkout-btn">
+        Proceed to Checkout
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ================= FAVORITES MODAL ================= -->
+<div id="favorites-modal" class="modal">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>❤️ Favorites</h2>
+      <button onclick="closeFavorites()">❌</button>
+    </div>
+
+    <div id="favorites-list">
+      <!-- Favorite items -->
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ================= QUICK VIEW MODAL ================= -->
+<div id="quick-view-modal" class="modal">
+
+  <div class="modal-content">
+
+    <h2 id="quick-name">Food Name</h2>
+
+    <img id="quick-img" src="https://via.placeholder.com/200">
+
+    <p id="quick-desc">
+      Delicious food description goes here.
+    </p>
+
+    <h3>₹<span id="quick-price">0</span></h3>
+
+    <div class="quick-actions">
+      <button onclick="addQuickToCart()">Add to Cart</button>
+      <button onclick="addToFavorites()">❤️</button>
+    </div>
+
+    <button onclick="closeQuickView()">Close</button>
+
+  </div>
+
+</div>
+
+<!-- ================= SEARCH RESULTS ================= -->
+<section id="search-section" class="search-section">
+
+  <h2>🔍 Search Results</h2>
+
+  <div id="search-results" class="grid">
+    <!-- Search results -->
+  </div>
+
+</section>
+
+<!-- ================= EMPTY STATES ================= -->
+<div id="empty-cart" class="empty-state">
+  <p>Your cart is empty 🛒</p>
+</div>
+
+<div id="empty-favorites" class="empty-state">
+  <p>No favorites yet ❤️</p>
+</div>
+
+<!-- ================= MOBILE NAV ================= -->
+<nav class="mobile-nav">
+
+  <button onclick="goHome()">🏠</button>
+  <button onclick="openFavorites()">❤️</button>
+  <button onclick="openCart()">🛒</button>
+  <button onclick="openProfile()">👤</button>
+
+</nav>
+
+<!-- ================= SCROLL BUTTON ================= -->
+<button id="scrollTopBtn" onclick="scrollToTop()">
+  ⬆
+</button>
+<!-- ================= PROFILE MODAL ================= -->
+<div id="profile-modal" class="modal">
+
+  <div class="modal-content profile-modal">
+
+    <div class="modal-header">
+      <h2>👤 User Profile</h2>
+      <button onclick="closeProfile()">❌</button>
+    </div>
+
+    <div class="profile-info">
+
+      <img 
+        src="https://via.placeholder.com/100" 
+        id="profile-pic"
+        class="profile-pic"
+      >
+
+      <h3 id="user-name">Guest User</h3>
+      <p id="user-email">Not logged in</p>
+
+      <button onclick="login()">Login</button>
+      <button onclick="logout()">Logout</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ================= ADDRESS SECTION ================= -->
+<section class="address-section">
+
+  <h2>📍 Delivery Address</h2>
+
+  <div class="address-form">
+
+    <input type="text" id="name" placeholder="Full Name">
+
+    <input type="text" id="phone" placeholder="Phone Number">
+
+    <input type="text" id="city" placeholder="City">
+
+    <input type="text" id="area" placeholder="Area / Street">
+
+    <input type="text" id="pincode" placeholder="Pincode">
+
+    <textarea id="instructions" placeholder="Delivery Instructions"></textarea>
+
+    <button onclick="saveAddress()">
+      Save Address
+    </button>
+
+  </div>
+
+</section>
+
+<!-- ================= CHECKOUT SECTION ================= -->
+<section id="checkout-section" class="checkout-section">
+
+  <h2>🧾 Checkout</h2>
+
+  <div class="checkout-container">
+
+    <!-- LEFT SIDE -->
+    <div class="checkout-left">
+
+      <h3>🛒 Order Summary</h3>
+
+      <div id="checkout-items">
+        <!-- Items from cart -->
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="checkout-right">
+
+      <h3>💳 Payment Method</h3>
+
+      <select id="payment-method">
+        <option value="cod">Cash on Delivery</option>
+        <option value="upi">UPI</option>
+        <option value="card">Credit / Debit Card</option>
+      </select>
+
+      <div class="price-breakdown">
+
+        <p>Subtotal: ₹<span id="checkout-subtotal">0</span></p>
+        <p>Delivery: ₹40</p>
+        <p>Discount: ₹<span id="discount">0</span></p>
+
+        <h3>Total: ₹<span id="checkout-total">0</span></h3>
+
+      </div>
+
+      <button onclick="placeOrder()" class="place-order-btn">
+        Place Order 🚀
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= ORDER HISTORY ================= -->
+<section id="orders-section" class="orders-section">
+
+  <h2>📦 Your Orders</h2>
+
+  <div id="orders-list">
+
+    <!-- Example Order -->
+    <div class="order-card">
+
+      <h4>Order #1001</h4>
+
+      <p>Status: Delivered ✅</p>
+
+      <p>Total: ₹499</p>
+
+      <button onclick="trackOrder(1001)">
+        Track
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= ORDER TRACKING ================= -->
+<section id="tracking-section" class="tracking-section">
+
+  <h2>🚚 Track Your Order</h2>
+
+  <div class="tracking-steps">
+
+    <div class="step active">Order Placed</div>
+    <div class="step">Preparing</div>
+    <div class="step">Out for Delivery</div>
+    <div class="step">Delivered</div>
+
+  </div>
+
+</section>
+
+<!-- ================= COUPON SECTION ================= -->
+<section class="coupon-section">
+
+  <h2>🎟 Apply Coupon</h2>
+
+  <div class="coupon-box">
+
+    <input 
+      type="text" 
+      id="coupon" 
+      placeholder="Enter coupon code"
+    >
+
+    <button onclick="applyCoupon()">
+      Apply
+    </button>
+
+  </div>
+
+  <p id="coupon-message"></p>
+
+</section>
+
+<!-- ================= RECOMMENDED SECTION ================= -->
+<section class="recommended-section">
+
+  <h2>⭐ Recommended For You</h2>
+
+  <div id="recommended-list" class="grid">
+    <!-- Recommended items -->
+  </div>
+
+</section>
+<!-- ================= CHAT SUPPORT ================= -->
+<div id="chat-box" class="chat-box">
+
+  <div class="chat-header">
+    <h3>💬 Support</h3>
+    <button onclick="toggleChat()">❌</button>
+  </div>
+
+  <div id="chat-messages" class="chat-messages">
+
+    <div class="message bot">
+      <p>Hello! How can I help you?</p>
+    </div>
+
+  </div>
+
+  <div class="chat-input">
+
+    <input 
+      type="text" 
+      id="chat-input" 
+      placeholder="Type your message..."
+    >
+
+    <button onclick="sendMessage()">Send</button>
+
+  </div>
+
+</div>
+
+<!-- ================= CHAT BUTTON ================= -->
+<button id="chat-toggle-btn" onclick="toggleChat()">
+  💬
+</button>
+
+<!-- ================= NOTIFICATION PANEL ================= -->
+<div id="notification-panel" class="notification-panel">
+
+  <div class="notification-header">
+    <h3>🔔 Notifications</h3>
+    <button onclick="closeNotifications()">❌</button>
+  </div>
+
+  <div id="notifications-list">
+
+    <div class="notification-item">
+      <p>🎉 Your order has been delivered!</p>
+    </div>
+
+    <div class="notification-item">
+      <p>🔥 50% discount applied!</p>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ================= NOTIFICATION BUTTON ================= -->
+<button id="notification-btn" onclick="openNotifications()">
+  🔔
+</button>
+
+<!-- ================= LOADING SKELETON ================= -->
+<section id="skeleton-section" class="skeleton-section">
+
+  <div class="skeleton-card"></div>
+  <div class="skeleton-card"></div>
+  <div class="skeleton-card"></div>
+  <div class="skeleton-card"></div>
+
+</section>
+
+<!-- ================= PRODUCT IMAGE ZOOM ================= -->
+<div id="zoom-modal" class="modal">
+
+  <div class="modal-content zoom-content">
+
+    <img id="zoom-image" src="">
+
+    <button onclick="closeZoom()">Close</button>
+
+  </div>
+
+</div>
+
+<!-- ================= WISHLIST SECTION ================= -->
+<section class="wishlist-section">
+
+  <h2>💖 Wishlist</h2>
+
+  <div id="wishlist-items">
+    <!-- Wishlist items -->
+  </div>
+
+</section>
+
+<!-- ================= FILTER DRAWER ================= -->
+<div id="filter-drawer" class="filter-drawer">
+
+  <h3>⚙️ Advanced Filters</h3>
+
+  <label>Rating</label>
+  <select onchange="filterByRating(this.value)">
+    <option value="all">All</option>
+    <option value="4">4★+</option>
+    <option value="3">3★+</option>
+  </select>
+
+  <label>Delivery Time</label>
+  <select onchange="filterByTime(this.value)">
+    <option value="all">Any</option>
+    <option value="fast">Fast (Under 30 min)</option>
+  </select>
+
+  <button onclick="closeFilter()">Close</button>
+
+</div>
+
+<!-- ================= PROMO SECTION ================= -->
+<section class="promo-section">
+
+  <div class="promo-card">
+    <h3>🔥 Mega Sale</h3>
+    <p>Get 50% off on all items</p>
+  </div>
+
+  <div class="promo-card">
+    <h3>🚀 Free Delivery</h3>
+    <p>On orders above ₹199</p>
+  </div>
+
+</section>
+
+<!-- ================= BACKGROUND ANIMATION ================= -->
+<div class="bg-animation"></div>
+
+<!-- ================= ADMIN PANEL ================= -->
+<section class="admin-panel">
+
+  <h2>⚙️ Admin Panel</h2>
+
+  <div class="admin-form">
+
+    <input 
+      type="text" 
+      id="admin-name" 
+      placeholder="Product Name"
+    >
+
+    <input 
+      type="number" 
+      id="admin-price" 
+      placeholder="Price"
+    >
+
+    <input 
+      type="text" 
+      id="admin-img" 
+      placeholder="Image URL"
+    >
+
+    <select id="admin-category">
+      <option value="pizza">Pizza</option>
+      <option value="burger">Burger</option>
+      <option value="drinks">Drinks</option>
+      <option value="dessert">Dessert</option>
+    </select>
+
+    <button onclick="addProduct()">
+      Add Product
+    </button>
+
+  </div>
+
+</section>
+<!-- ================= ANALYTICS DASHBOARD ================= -->
+<section class="analytics-section">
+
+  <h2>📊 Analytics Dashboard</h2>
+
+  <div class="analytics-cards">
+
+    <div class="analytics-card">
+      <h3>Total Orders</h3>
+      <p id="total-orders">0</p>
+    </div>
+
+    <div class="analytics-card">
+      <h3>Total Revenue</h3>
+      <p id="total-revenue">₹0</p>
+    </div>
+
+    <div class="analytics-card">
+      <h3>Active Users</h3>
+      <p id="active-users">0</p>
+    </div>
+
+  </div>
+
+  <div class="analytics-graph">
+    <p>📈 Sales Graph (UI only)</p>
+  </div>
+
+</section>
+
+<!-- ================= AI RECOMMENDATION ================= -->
+<section class="ai-section">
+
+  <h2>🤖 AI Recommendations</h2>
+
+  <div id="ai-recommendations" class="grid">
+    <!-- AI suggested items -->
+  </div>
+
+</section>
+
+<!-- ================= INVOICE MODAL ================= -->
+<div id="invoice-modal" class="modal">
+
+  <div class="modal-content invoice-content">
+
+    <h2>🧾 Invoice</h2>
+
+    <div id="invoice-details">
+
+      <p>Order ID: <span id="invoice-id">#0000</span></p>
+      <p>Date: <span id="invoice-date">--</span></p>
+
+      <div id="invoice-items">
+        <!-- Items -->
+      </div>
+
+      <h3>Total: ₹<span id="invoice-total">0</span></h3>
+
+    </div>
+
+    <button onclick="downloadInvoice()">Download</button>
+    <button onclick="closeInvoice()">Close</button>
+
+  </div>
+
+</div>
+
+<!-- ================= PAYMENT SUCCESS ================= -->
+<div id="success-modal" class="modal">
+
+  <div class="modal-content success-content">
+
+    <h2>✅ Payment Successful</h2>
+
+    <p>Your order has been placed successfully!</p>
+
+    <button onclick="goHome()">Back to Home</button>
+
+  </div>
+
+</div>
+
+<!-- ================= ERROR MODAL ================= -->
+<div id="error-modal" class="modal">
+
+  <div class="modal-content error-content">
+
+    <h2>❌ Error</h2>
+
+    <p id="error-message">Something went wrong</p>
+
+    <button onclick="closeError()">Close</button>
+
+  </div>
+
+</div>
+
+<!-- ================= USER SETTINGS ================= -->
+<section class="settings-section">
+
+  <h2>⚙️ Settings</h2>
+
+  <label>
+    <input type="checkbox" onchange="toggleNotifications(this.checked)">
+    Enable Notifications
+  </label>
+
+  <label>
+    <input type="checkbox" onchange="toggleSounds(this.checked)">
+    Enable Sounds
+  </label>
+
+</section>
+
+<!-- ================= MULTI-ADDRESS LIST ================= -->
+<section class="address-list">
+
+  <h2>📍 Saved Addresses</h2>
+
+  <div id="saved-addresses">
+
+    <div class="address-card">
+      <p>Home - Mumbai</p>
+      <button>Use</button>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= DELIVERY SLOTS ================= -->
+<section class="delivery-slots">
+
+  <h2>⏰ Choose Delivery Time</h2>
+
+  <select id="delivery-time">
+    <option>ASAP</option>
+    <option>30 mins</option>
+    <option>1 hour</option>
+  </select>
+
+</section>
+
+<!-- ================= LANGUAGE SELECTOR ================= -->
+<section class="language-section">
+
+  <h2>🌐 Language</h2>
+
+  <select onchange="changeLanguage(this.value)">
+    <option value="en">English</option>
+    <option value="hi">Hindi</option>
+  </select>
+
+</section>
+
+<!-- ================= APP BANNER ================= -->
+<section class="app-banner">
+
+  <h2>📱 Download Our App</h2>
+
+  <p>Get faster experience on mobile</p>
+
+  <button>Download</button>
+
+</section>
+<!-- ================= AUTH (LOGIN / SIGNUP) ================= -->
+<div id="auth-modal" class="modal">
+
+  <div class="modal-content auth-content">
+
+    <h2>🔐 Login / Signup</h2>
+
+    <input type="email" id="auth-email" placeholder="Enter Email">
+
+    <input type="password" id="auth-password" placeholder="Enter Password">
+
+    <button onclick="loginUser()">Login</button>
+
+    <button onclick="signupUser()">Signup</button>
+
+    <button onclick="googleLogin()">Login with Google</button>
+
+    <button onclick="phoneLogin()">Login with Phone</button>
+
+  </div>
+
+</div>
+
+<!-- ================= OTP VERIFICATION ================= -->
+<div id="otp-modal" class="modal">
+
+  <div class="modal-content">
+
+    <h2>📱 OTP Verification</h2>
+
+    <input type="text" id="otp-input" placeholder="Enter OTP">
+
+    <button onclick="verifyOTP()">Verify</button>
+
+  </div>
+
+</div>
+
+<!-- ================= SECURITY SETTINGS ================= -->
+<section class="security-section">
+
+  <h2>🔒 Security Settings</h2>
+
+  <label>
+    <input type="checkbox" onchange="toggle2FA(this.checked)">
+    Enable 2FA
+  </label>
+
+  <label>
+    <input type="checkbox" onchange="toggleAutoLogout(this.checked)">
+    Auto Logout
+  </label>
+
+</section>
+
+<!-- ================= SESSION INFO ================= -->
+<section class="session-section">
+
+  <h2>🧠 Session Info</h2>
+
+  <p>Last Login: <span id="last-login">--</span></p>
+  <p>Device: <span id="device">Browser</span></p>
+
+</section>
+
+<!-- ================= SAVED CARDS ================= -->
+<section class="cards-section">
+
+  <h2>💳 Saved Cards</h2>
+
+  <div id="cards-list">
+
+    <div class="card-item">
+      <p>**** **** **** 1234</p>
+      <button>Remove</button>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= LOYALTY PROGRAM ================= -->
+<section class="loyalty-section">
+
+  <h2>🎁 Loyalty Points</h2>
+
+  <p>You have <span id="points">0</span> points</p>
+
+  <button onclick="redeemPoints()">Redeem</button>
+
+</section>
+
+<!-- ================= REFERRAL SYSTEM ================= -->
+<section class="referral-section">
+
+  <h2>👥 Refer & Earn</h2>
+
+  <p>Your Code: <b id="ref-code">ABC123</b></p>
+
+  <button onclick="copyReferral()">Copy Code</button>
+
+</section>
+
+<!-- ================= NOTIFICATION SETTINGS ================= -->
+<section class="notification-settings">
+
+  <h2>🔔 Notification Settings</h2>
+
+  <label>
+    <input type="checkbox" checked>
+    Order Updates
+  </label>
+
+  <label>
+    <input type="checkbox">
+    Offers & Discounts
+  </label>
+
+</section>
+
+<!-- ================= FEEDBACK SYSTEM ================= -->
+<section class="feedback-section">
+
+  <h2>⭐ Feedback</h2>
+
+  <textarea placeholder="Write your feedback..."></textarea>
+
+  <button onclick="submitFeedback()">Submit</button>
+
+</section>
+
+<!-- ================= RATING SYSTEM ================= -->
+<section class="rating-section">
+
+  <h2>⭐ Rate Your Experience</h2>
+
+  <div class="stars">
+
+    <span onclick="rate(1)">★</span>
+    <span onclick="rate(2)">★</span>
+    <span onclick="rate(3)">★</span>
+    <span onclick="rate(4)">★</span>
+    <span onclick="rate(5)">★</span>
+
+  </div>
+
+</section>
+
+<!-- ================= HELP CENTER ================= -->
+<section class="help-section">
+
+  <h2>❓ Help Center</h2>
+
+  <p onclick="openFAQ()">FAQs</p>
+  <p onclick="contactSupport()">Contact Support</p>
+
+</section>
+
+<!-- ================= FAQ SECTION ================= -->
+<section class="faq-section">
+
+  <h2>📖 FAQs</h2>
+
+  <details>
+    <summary>How to order?</summary>
+    <p>Select food and checkout.</p>
+  </details>
+
+  <details>
+    <summary>Payment methods?</summary>
+    <p>UPI, Card, COD supported.</p>
+  </details>
+
+</section>
+
+<!-- ================= SYSTEM STATUS ================= -->
+<section class="system-status">
+
+  <h2>🖥 System Status</h2>
+
+  <p>Server: Online ✅</p>
+  <p>Payments: Working ✅</p>
+
+</section>
+<!-- ================= TERMS & PRIVACY ================= -->
+<section class="legal-section">
+
+  <h2>📜 Terms & Privacy</h2>
+
+  <p onclick="openTerms()">Terms & Conditions</p>
+  <p onclick="openPrivacy()">Privacy Policy</p>
+
+</section>
+
+<!-- ================= SOCIAL MEDIA ================= -->
+<section class="social-section">
+
+  <h2>🌐 Follow Us</h2>
+
+  <div class="social-icons">
+    <span>📘 Facebook</span>
+    <span>📸 Instagram</span>
+    <span>🐦 Twitter</span>
+  </div>
+
+</section>
+
+<!-- ================= NEWSLETTER ================= -->
+<section class="newsletter-section">
+
+  <h2>📩 Subscribe</h2>
+
+  <input 
+    type="email" 
+    placeholder="Enter your email"
+  >
+
+  <button onclick="subscribeNewsletter()">
+    Subscribe
+  </button>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="main-footer">
+
+  <div class="footer-grid">
+
+    <div>
+      <h3>FoodExpress</h3>
+      <p>Fastest delivery platform</p>
+    </div>
+
+    <div>
+      <h3>Company</h3>
+      <p>About</p>
+      <p>Careers</p>
+    </div>
+
+    <div>
+      <h3>Support</h3>
+      <p>Help Center</p>
+      <p>Contact</p>
+    </div>
+
+  </div>
+
+  <p class="copyright">
+    © 2026 FoodExpress. All rights reserved.
+  </p>
+
+</footer>
+
+<!-- ================= FINAL SCRIPTS ================= -->
+<script src="script.js"></script>
 
 </body>
 </html>
