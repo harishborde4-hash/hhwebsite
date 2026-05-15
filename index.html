@@ -1,133 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Full App</title>
+  <title>Ecommerce</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Full App</h2>
+<h1>My Store</h1>
 
-<button onclick="googleLogin()">Login with Google</button>
-<button onclick="logout()">Logout</button>
+<div id="products" class="grid"></div>
 
-<br><br>
+<h2>Cart</h2>
+<div id="cart"></div>
 
-<input type="file" id="fileInput">
-<button onclick="uploadImage()">Upload Profile Picture</button>
-
-<br><br>
-
-<div id="profile"></div>
-
-<p id="status"></p>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-import { 
-  getFirestore, 
-  doc, 
-  setDoc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-import { 
-  getStorage, 
-  ref, 
-  uploadBytes, 
-  getDownloadURL 
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-
-// CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyDrRL7BkyejSooFNx0pD5hBSMsgkfM8MpM",
-  authDomain: "database-f0aee.firebaseapp.com",
-  projectId: "database-f0aee",
-  storageBucket: "database-f0aee.firebasestorage.app",
-  messagingSenderId: "1025759093694",
-  appId: "1:1025759093694:web:debbf45afc5f0241e88fef"
-};
-
-// INIT
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-const provider = new GoogleAuthProvider();
-
-// LOGIN
-window.googleLogin = async () => {
-  const result = await signInWithPopup(auth, provider);
-  const user = result.user;
-
-  await setDoc(doc(db, "users", user.uid), {
-    name: user.displayName,
-    email: user.email,
-    photo: user.photoURL
-  });
-
-  document.getElementById("status").innerText = "Logged in ✅";
-};
-
-// LOGOUT
-window.logout = () => {
-  signOut(auth);
-  document.getElementById("profile").innerHTML = "";
-  document.getElementById("status").innerText = "Logged out ❌";
-};
-
-// SHOW USER PROFILE
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const docRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-
-      document.getElementById("profile").innerHTML = `
-        <h3>${data.name}</h3>
-        <p>${data.email}</p>
-        <img src="${data.photo}" width="100">
-      `;
-    }
-  }
-});
-
-// UPLOAD PROFILE IMAGE
-window.uploadImage = async () => {
-  const file = document.getElementById("fileInput").files[0];
-  const user = auth.currentUser;
-
-  if (!file || !user) {
-    alert("Login and select file");
-    return;
-  }
-
-  const storageRef = ref(storage, "profiles/" + user.uid);
-
-  await uploadBytes(storageRef, file);
-
-  const url = await getDownloadURL(storageRef);
-
-  // update DB
-  await setDoc(doc(db, "users", user.uid), {
-    photo: url
-  }, { merge: true });
-
-  document.getElementById("status").innerText = "Image uploaded ✅";
-};
-
-</script>
+<script type="module" src="script.js"></script>
 
 </body>
 </html>
