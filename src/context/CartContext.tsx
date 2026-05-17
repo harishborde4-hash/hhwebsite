@@ -1,15 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CartItem, Product } from '../types';
-import toast from 'react-hot-toast';
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product, size: string, color: string) => void;
-  removeFromCart: (productId: string, size: string, color: string) => void;
-  updateQuantity: (productId: string, size: string, color: string, quantity: number) => void;
+  addToCart: (item: CartItem) => void;
+  removeFromCart: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
-  cartTotal: number;
-  cartCount: number;
+  totalPrice: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -24,51 +29,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: Product, size: string, color: string) => {
-    setCart(prev => {
-      const existing = prev.find(item => 
-        item.id === product.id && 
-        item.selectedSize === size && 
-        item.selectedColor === color
-      );
-
+  const addToCart = (item: CartItem) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === item.id);
       if (existing) {
-        toast.success(`Increased quantity of ${product.name}`);
-        return prev.map(item => 
-          item === existing ? { ...item, quantity: item.quantity + 1 } : item
+        return prev.map((i) =>
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-
-      toast.success(`${product.name} added to cart`);
-      return [...prev, { ...product, selectedSize: size, selectedColor: color, quantity: 1 }];
+      return [...prev, { ...item, quantity: 1 }];
     });
   };
 
-  const removeFromCart = (productId: string, size: string, color: string) => {
-    setCart(prev => prev.filter(item => 
-      !(item.id === productId && item.selectedSize === size && item.selectedColor === color)
-    ));
-    toast.error('Item removed from cart');
+  const removeFromCart = (id: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const updateQuantity = (productId: string, size: string, color: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) return;
-    setCart(prev => prev.map(item => 
-      (item.id === productId && item.selectedSize === size && item.selectedColor === color)
-        ? { ...item, quantity }
-        : item
-    ));
+    setCart((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+    );
   };
 
   const clearCart = () => setCart([]);
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ 
-      cart, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount 
-    }}>
+    <CartContext.Provider
+      value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -76,6 +67,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) throw new Error('useCart must be used within CartProvider');
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
   return context;
 };

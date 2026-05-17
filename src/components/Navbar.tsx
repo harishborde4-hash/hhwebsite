@@ -1,147 +1,104 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingBag, User, Search, Menu, X, Heart, LogOut } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Moon, Sun, Menu, X, LogOut, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Navbar = () => {
-  const { cartCount } = useCart();
-  const { user, logout, signInWithGoogle } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { cart } = useCart();
+  const { theme, toggleTheme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
-            <button 
-              className="p-2 md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <Link to="/" className="text-2xl font-black tracking-tighter text-black ml-2 md:ml-0">
-              TEE<span className="text-indigo-600">STORM</span>
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">Crucial Salad</span>
             </Link>
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/category/Oversized" className="text-sm font-medium hover:text-indigo-600 transition-colors">Oversized</Link>
-            <Link to="/category/Graphic" className="text-sm font-medium hover:text-indigo-600 transition-colors">Graphic</Link>
-            <Link to="/category/Classic" className="text-sm font-medium hover:text-indigo-600 transition-colors">Classic</Link>
-            <Link to="/category/Sports" className="text-sm font-medium hover:text-indigo-600 transition-colors">Sports</Link>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <button 
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-            >
-              <Search size={20} />
-            </button>
-            
-            <Link to="/wishlist" className="p-2 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
-              <Heart size={20} />
-            </Link>
-
+            <Link to="/" className="text-gray-700 dark:text-gray-200 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium">Home</Link>
             <div className="relative">
-              {user ? (
-                <div className="group relative">
-                  <button className="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-full transition-colors">
-                    <img 
-                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`} 
-                      alt="avatar" 
-                      className="w-8 h-8 rounded-full"
-                    />
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <div className="p-4 border-b border-gray-50">
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                    </div>
-                    <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-50">My Profile</Link>
-                    <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-50">Order History</Link>
-                    <button 
-                      onClick={logout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                    >
-                      <LogOut size={16} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button 
-                  onClick={signInWithGoogle}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <User size={20} />
-                </button>
-              )}
+              <input 
+                type="text" 
+                placeholder="Search salads..." 
+                className="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-none focus:ring-2 focus:ring-emerald-500 w-64 transition-all"
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
+            
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
 
-            <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
-              <ShoppingBag size={20} />
+            <Link to="/cart" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+              <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-emerald-600 rounded-full">
                   {cartCount}
                 </span>
               )}
             </Link>
+
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link to="/profile" className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
+                    {user.email?.[0].toUpperCase()}
+                  </div>
+                </Link>
+                <button 
+                  onClick={() => { logout(); navigate('/'); }} 
+                  className="p-2 text-gray-500 hover:text-red-500"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className="bg-emerald-600 text-white px-6 py-2 rounded-full font-medium hover:bg-emerald-700 transition-all">
+                Login
+              </Link>
+            )}
+          </div>
+
+          <div className="md:hidden flex items-center space-x-4">
+            <button onClick={toggleTheme}>
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
+            <button onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
-          >
-            <div className="px-4 py-6 space-y-4">
-              <Link to="/category/Oversized" className="block text-lg font-medium">Oversized</Link>
-              <Link to="/category/Graphic" className="block text-lg font-medium">Graphic</Link>
-              <Link to="/category/Classic" className="block text-lg font-medium">Classic</Link>
-              <Link to="/category/Sports" className="block text-lg font-medium">Sports</Link>
-              <hr />
-              <Link to="/wishlist" className="block text-lg font-medium">Wishlist</Link>
-              <Link to="/profile" className="block text-lg font-medium">Profile</Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Search Overlay */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-white p-4 border-b border-gray-100 shadow-xl"
-          >
-            <div className="max-w-3xl mx-auto relative">
-              <input 
-                autoFocus
-                type="text" 
-                placeholder="Search for t-shirts..." 
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-600 transition-all"
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <button 
-                onClick={() => setIsSearchOpen(false)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-900 px-4 pt-2 pb-6 border-t dark:border-gray-800">
+          <div className="flex flex-col space-y-4">
+            <Link to="/" onClick={() => setIsOpen(false)} className="text-gray-700 dark:text-gray-200 py-2">Home</Link>
+            <Link to="/cart" onClick={() => setIsOpen(false)} className="flex items-center text-gray-700 dark:text-gray-200 py-2">
+              Cart ({cartCount})
+            </Link>
+            {user ? (
+              <>
+                <Link to="/profile" onClick={() => setIsOpen(false)} className="text-gray-700 dark:text-gray-200 py-2">Profile</Link>
+                <button onClick={() => { logout(); setIsOpen(false); }} className="text-left text-red-500 py-2">Logout</button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setIsOpen(false)} className="bg-emerald-600 text-white px-6 py-2 rounded-full text-center">Login</Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

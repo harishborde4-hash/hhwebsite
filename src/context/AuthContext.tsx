@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   onAuthStateChanged, 
-  User,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut as firebaseSignOut
+  User, 
+  signInWithPopup, 
+  signOut
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, googleProvider } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -30,21 +29,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Error signing in with Google", error);
+    }
   };
 
-  const logout = () => firebaseSignOut(auth);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out", error);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 };
