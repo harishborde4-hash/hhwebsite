@@ -1,0 +1,24 @@
+{
+  "surfaces": [
+    "new-game flow","load-game flow","character creator","world map","mini-map",
+    "quest journal","codex","inventory","equipment screen","skill tree",
+    "crafting screen","base planner","settlement dashboard","trade screen",
+    "dialogue screen","pause menu","settings menu","photo mode","multiplayer lobby",
+    "mod browser","save slot menu","death screen","level-up screen",
+    "boss health UI","companion command wheel","vehicle dashboard",
+    "weather forecast panel","calendar panel","achievement panel","mailbox panel"
+  ],
+  "axes": [
+    "first-time onboarding","returning-player clarity","empty-state copy",
+    "loading-state behavior","error-state recovery","focus-order navigation",
+    "touch target spacing","controller glyph accuracy","keyboard shortcut visibility",
+    "mouse hover affordance","screen-reader label","colorblind readability",
+    "large-font layout","RTL layout support","text overflow handling",
+    "safe-area compliance","offline functionality","cloud-sync conflict",
+    "autosave timing","manual-save confirmation","analytics opt-out",
+    "privacy notice","child-safety setting","low-memory response",
+    "thermal-throttle response","battery-saver behavior","ultrawide layout",
+    "small-phone layout","tablet layout","foldable layout","Steam Deck layout",
+    "modded-content warning","localization key coverage"
+  ]
+}
